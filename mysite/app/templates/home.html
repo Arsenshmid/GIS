@@ -2,18 +2,9 @@
 <html>
 <head>
     <title>Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
-    <div id="mapid" style="height: 600px;"></div>
-
-    <script>
-        var mymap = L.map('mapid').setView([62.035452, 129.675475], 13); // координаты Якутска
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-        }).addTo(mymap);
-    </script>
+    <h1>My Map</h1>
+    {{ map|safe }}
 </body>
 </html>
