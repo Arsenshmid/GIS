@@ -1,7 +1,26 @@
+import folium
 from django.shortcuts import render
-
-from django.http import HttpResponse
+import geopandas as gpd
 
 def home(request):
-    return HttpResponse('')
+    # Чтение файла .gpkg
+    gdf = gpd.read_file('C:/Users/apce1/Desktop/данные для карты/data/airport-line.gpkg')
 
+    # Создание карты
+    m = folium.Map(location=[62.035452, 129.675475], zoom_start=13)
+
+    # Добавление данных GeoDataFrame в карту
+    for _, r in gdf.iterrows():
+        # Преобразование каждой геометрии в данные GeoJSON
+        sim_geo = gpd.GeoSeries(r['geometry']).simplify(tolerance=0.001)
+        geo_j = sim_geo.to_json()
+        geo_j = folium.GeoJson(data=geo_j,
+                               style_function=lambda x: {'fillColor': 'orange'})
+        
+        # Добавление данных GeoJSON в карту
+        geo_j.add_to(m)
+
+    # Сохранение карты в файл HTML
+    m.save('templates/map.html')
+
+    return render(request, 'home.html')
