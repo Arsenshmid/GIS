@@ -2,10 +2,28 @@
 <html>
 <head>
     <title>Map</title>
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h1>Map</h1>
-    {{ map|safe }}
-    <a href="{% url 'chart' %}">Go to Chart</a>
+    <div class="container">
+        <h1 class="text-center my-4">Map</h1>
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Отображение карты в отдельном блоке -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        {{ map|safe }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <!-- Кнопка для перехода к графику -->
+                <a href="{% url 'chart' %}" class="btn btn-primary btn-block">Go to Chart</a>
+            </div>
+        </div>
+    </div>
+    <!-- Подключение Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </body>
 </html>

@@ -1,0 +1,50 @@
+// Вычисление NDVI для Якутска
+var geometry = ee.Geometry.Polygon(
+  [[[129.0, 63.5],
+    [129.0, 63.7],
+    [129.3, 63.7],
+    [129.3, 63.5]]]);
+
+// Создание коллекции изображений Sentinel-2
+var S2 = ee.ImageCollection('COPERNICUS/S2')
+  .filterDate('2018-09-01', '2019-10-31')
+  .filterBounds(geometry);
+
+// Маскирование облачности
+var maskcloud1 = function(image) {
+  var QA60 = image.select(['QA60']);
+  return image.updateMask(QA60.lt(1));
+};
+
+S2 = S2.map(maskcloud1);
+
+// Вычисление NDVI
+var addNDVI = function(image) {
+  return image.addBands(image.normalizedDifference(['B8', 'B4']).rename('NDVI'));
+};
+
+S2 = S2.map(addNDVI);
+
+// Получение медианного NDVI
+var NDVImed = S2.select(['NDVI']).median();
+
+// Визуализация
+var ndvi_pal = ['#d73027', '#f46d43', '#fdae61', '#fee08b', '#d9ef8b', '#a6d96a'];
+Map.addLayer(NDVImed.clip(geometry), {min: -0.5, max: 0.9, palette: ndvi_pal}, 'NDVI');
+
+// Вывод временного ряда NDVI
+var plotNDVI = ui.Chart.image.seriesByRegion({
+  imageCollection: S2,
+  regions: geometry,
+  reducer: ee.Reducer.mean(),
+  band: 'NDVI',
+  scale: 500
+})
+.setChartType('LineChart')
+.setOptions({
+  title: 'NDVI временной ряд',
+  hAxis: {title: 'Дата'},
+  vAxis: {title: 'NDVI'}
+});
+
+print(plotNDVI);

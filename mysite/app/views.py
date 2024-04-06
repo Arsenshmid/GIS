@@ -12,7 +12,82 @@ from shapely.geometry import Polygon
 import geopandas as gpd
 import pandas as pd
 from django.http import HttpResponse
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+import pandas as pd
+import matplotlib.pyplot as plt
+from django.shortcuts import render
+from io import BytesIO
+import base64
 
+import pandas as pd
+import matplotlib.pyplot as plt
+from django.shortcuts import render
+from io import BytesIO
+import base64
+import pandas as pd
+import matplotlib.pyplot as plt
+from django.shortcuts import render
+from io import BytesIO
+import base64
+
+def chart_view(request):
+    period = request.GET.get('period', 'months')  # Получаем выбранный период, если не выбран, то по умолчанию 'months'
+
+    # Считываем данные из файла ee-chart.csv
+    data_df = pd.read_csv('ee-chart.csv')
+
+    # Преобразуем столбец 'system:time_start' в формат datetime
+    data_df['system:time_start'] = pd.to_datetime(data_df['system:time_start'])
+
+    # Удаляем строки с отсутствующими значениями NDVI
+    data_df = data_df.dropna(subset=['0'])
+
+    # Преобразуем значения NDVI в числовой формат
+    data_df['0'] = pd.to_numeric(data_df['0'], errors='coerce')
+
+    if period == 'months':
+        # Группируем данные по месяцам и вычисляем среднее значение NDVI
+        data_df['year_month'] = data_df['system:time_start'].dt.to_period('M')
+        grouped_data = data_df.groupby('year_month').mean()
+        title = 'Средний NDVI по месяцам'
+        x_label = 'Месяц'
+    elif period == 'years':
+        # Группируем данные по годам и вычисляем среднее значение NDVI
+        data_df['year'] = data_df['system:time_start'].dt.year
+        grouped_data = data_df.groupby('year').mean()
+        title = 'Средний NDVI по годам'
+        x_label = 'Год'
+    elif period == 'both':
+        # Группируем данные одновременно по годам и месяцам и вычисляем среднее значение NDVI
+        data_df['year_month'] = data_df['system:time_start'].dt.strftime('%Y-%m')
+        grouped_data = data_df.groupby('year_month').mean()
+        title = 'Средний NDVI по месяцам и годам'
+        x_label = 'Месяц и год'
+
+    # Создаем график
+    plt.figure(figsize=(10, 5))
+    plt.plot(grouped_data.index.astype(str), grouped_data['0'])  # Преобразуем периоды в строки
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel('Средний NDVI')
+
+    # Сохраняем график в PNG
+    buf = BytesIO()
+    plt.savefig(buf, format='png')
+    image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8').replace('\n', '')
+    buf.close()
+
+    return render(request, 'chart.html', {'image_base64': image_base64})
+
+
+
+
+
+
+    
 def load_data():
     # Чтение данных из CSV-файла
     df = pd.read_csv('synthetic_data.csv')
@@ -22,33 +97,7 @@ def load_data():
         data = HarvestData(latitude=row['latitude'], longitude=row['longitude'], weight=row['weight'], irrigated=row['irrigated'], crop=row['crop'])
         data.save()
 
-def chart_view(request):
-    # Получение данных из модели Django
-    data = HarvestData.objects.all()
 
-    # Создание списков для хранения данных
-    dates = []
-    weights = []
-
-    # Заполнение списков данными
-    for point in data:
-        dates.append(point.date)
-        weights.append(point.weight)
-
-    # Создание графика
-    plt.figure(figsize=(10, 5))
-    plt.plot(dates, weights)
-    plt.title('NDVI time series for a single pixel')
-    plt.xlabel('Date')
-    plt.ylabel('NDVI')
-
-    # Сохранение графика в PNG
-    buf = BytesIO()
-    plt.savefig(buf, format='png')
-    image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8').replace('\n', '')
-    buf.close()
-
-    return render(request, 'chart.html', {'image_base64': image_base64})
 
 def map_view(request):
     # Загрузка данных

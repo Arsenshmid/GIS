@@ -1,11 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Chart</title>
+    <title>NDVI Chart</title>
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h1>Chart</h1>
-    <img src="data:image/png;base64,{{ image_base64 }}" alt="NDVI Chart">
-    <a href="{% url 'map' %}">Go to Map</a>
+    <div class="container">
+        <h1 class="text-center">NDVI Chart</h1>
+        <!-- Радиокнопки для выбора периода -->
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="period" id="months" value="months" checked>
+                    <label class="form-check-label" for="months">По месяцам</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="period" id="years" value="years">
+                    <label class="form-check-label" for="years">По годам</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="period" id="both" value="both">
+                    <label class="form-check-label" for="both">По месяцам и годам</label>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-8">
+                <img src="data:image/png;base64,{{ image_base64 }}" id="ndvi-chart" class="img-fluid" alt="NDVI Chart">
+            </div>
+        </div>
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-4">
+                <a href="{% url 'map' %}" class="btn btn-primary btn-block">Назад</a>
+            </div>
+        </div>
+    </div>
+    <!-- Подключение Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <!-- Подключение jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Обработчик изменения выбранного периода
+        $('input[name="period"]').change(function() {
+            // Получаем значение выбранного периода
+            var period = $('input[name="period"]:checked').val();
+            // Отправляем AJAX-запрос на сервер с выбранным периодом
+            $.ajax({
+                type: 'GET',
+                url: '{% url "chart" %}',
+                data: {
+                    period: period
+                },
+                success: function(response) {
+                    // Обновляем изображение графика
+                    $('#ndvi-chart').attr('src', 'data:image/png;base64,' + response.image_base64);
+                }
+            });
+        });
+    </script>
 </body>
 </html>
