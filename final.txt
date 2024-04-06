@@ -1,3 +1,101 @@
+mysite/app/templates/home.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Map</title>
+</head>
+<body>
+    <h1>My Map</h1>
+    {{ map|safe }}
+</body>
+</html>
+mysite/app/models.py
+from django.db import models
+
+class HarvestData(models.Model):
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    weight = models.FloatField()
+    irrigated = models.BooleanField()
+    crop = models.CharField(max_length=50)
+
+mysite/app/views.py
+import folium
+from django.shortcuts import render
+import pandas as pd
+from .models import HarvestData
+
+def load_data():
+    # Чтение данных из CSV-файла
+    df = pd.read_csv('synthetic_data.csv')
+
+    # Загрузка данных в модель Django
+    for index, row in df.iterrows():
+        data = HarvestData(latitude=row['latitude'], longitude=row['longitude'], weight=row['weight'], irrigated=row['irrigated'], crop=row['crop'])
+        data.save()
+
+def home(request):
+    # Загрузка данных
+    load_data()
+
+    # Создание карты
+    m = folium.Map(location=[62.035452, 129.675475], zoom_start=13)
+
+    # Добавление данных из модели Django на карту
+    for data in HarvestData.objects.all():
+        # Выбор цвета в зависимости от веса урожая
+        if data.weight < 60:
+            color = 'red'
+        elif data.weight < 70:
+            color = 'yellow'
+        else:
+            color = 'green'
+
+        # Добавление маркера на карту
+        folium.Marker([data.latitude, data.longitude], popup=f'Weight: {data.weight}', icon=folium.Icon(color=color)).add_to(m)
+
+    # Генерация HTML-строки с картой
+    m = m._repr_html_()
+
+    return render(request, 'home.html', {'map': m})
+
+mysite/app/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.home, name='home'),
+]
+
+mysite/mysite/urls.py
+"""
+URL configuration for mysite project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/5.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+from django.contrib import admin
+from django.urls import include, path
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('app.urls')),
+]
+
+
+
+
+mysite/mysite/settings.py
 """
 Django settings for mysite project.
 
@@ -128,3 +226,16 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+mysite/app/apps.py
+from django.apps import AppConfig
+
+
+class AppConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'app'
+
+mysite/app/admin.py
+from django.contrib import admin
+
+# Register your models here.
+

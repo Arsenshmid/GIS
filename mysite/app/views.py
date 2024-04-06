@@ -1,10 +1,6 @@
 import folium
 from django.shortcuts import render
-import geopandas as gpd
 import pandas as pd
-from .models import HarvestData
-import folium
-from django.shortcuts import render
 from .models import HarvestData
 
 def load_data():
@@ -40,8 +36,3 @@ def home(request):
     m = m._repr_html_()
 
     return render(request, 'home.html', {'map': m})
-
-
-
-
-
