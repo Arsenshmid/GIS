@@ -12,7 +12,42 @@ from shapely.geometry import Polygon
 import geopandas as gpd
 import pandas as pd
 from django.http import HttpResponse
+import ee
+from django.http import JsonResponse
 
+def get_ee_data(request):
+    # Инициализация Google Earth Engine
+    ee.Initialize()
+
+    # Загрузка набора данных о растительности
+    collection = ee.ImageCollection('MODIS/006/MOD13A2').select('NDVI')
+
+    # Указание временного диапазона
+    collection = collection.filterDate('2018-01-01', '2018-12-31')
+
+    # Указание области интереса
+    aoi = ee.Geometry.Rectangle([-98.5, 39.0, -98.4, 39.1])
+
+    # Усреднение значений NDVI по всем изображениям в коллекции
+    average = collection.mean()
+
+    # Применение маски для удаления областей без данных
+    masked = average.updateMask(average)
+
+    # Получение данных из Google Earth Engine
+    url = masked.getThumbUrl({
+        'region': aoi.toGeoJSONString(),
+        'scale': 250,
+        'min': 0,
+        'max': 9000,
+        'palette': ['blue', 'green', 'red']
+    })
+
+    # Возвращение данных в виде JSON-ответа
+    return JsonResponse({'url': url})
+
+
+    
 def calculate_ndvi(request):
     # Загрузка данных из CSV
     data = pd.read_csv('synthetic_data.csv')
