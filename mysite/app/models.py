@@ -6,3 +6,5 @@ class HarvestData(models.Model):
     weight = models.FloatField()
     irrigated = models.BooleanField()
     crop = models.CharField(max_length=50)
+
+

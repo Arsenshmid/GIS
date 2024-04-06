@@ -2,6 +2,7 @@ import folium
 from django.shortcuts import render
 import pandas as pd
 from .models import HarvestData
+import numpy as np
 
 def load_data():
     # Чтение данных из CSV-файла
@@ -17,20 +18,20 @@ def home(request):
     load_data()
 
     # Создание карты
-    m = folium.Map(location=[62.035452, 129.675475], zoom_start=13)
+    m = folium.Map(location=[62.011, 129.011], zoom_start=15)  # Центральная точка области
 
     # Добавление данных из модели Django на карту
     for data in HarvestData.objects.all():
         # Выбор цвета в зависимости от веса урожая
-        if data.weight < 60:
+        if data.weight < 333:
             color = 'red'
-        elif data.weight < 70:
+        elif data.weight < 666:
             color = 'yellow'
         else:
             color = 'green'
 
         # Добавление маркера на карту
-        folium.Marker([data.latitude, data.longitude], popup=f'Weight: {data.weight}', icon=folium.Icon(color=color)).add_to(m)
+        folium.CircleMarker([data.latitude, data.longitude], radius=10, popup=f'Weight: {data.weight}', color=color, fill=True, fill_color=color).add_to(m)
 
     # Генерация HTML-строки с картой
     m = m._repr_html_()

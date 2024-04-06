@@ -9,6 +9,34 @@ mysite/app/templates/home.html
     {{ map|safe }}
 </body>
 </html>
+mysite/сгенерировать тестовые данные.py
+import pandas as pd
+import numpy as np
+
+# Создаем пустой DataFrame
+df = pd.DataFrame(columns=['latitude', 'longitude', 'weight', 'irrigated', 'crop'])
+
+# Задаем границы области внутри Якутска (примерно 2 км)
+min_lat, max_lat = 62, 62.01
+min_lon, max_lon = 129, 129.01
+
+# Задаем шаг для генерации точек
+step = 0.00018  # примерно 20 метров
+
+# Заполняем DataFrame данными
+i = 0
+for lat in np.arange(min_lat, max_lat, step):
+    for lon in np.arange(min_lon, max_lon, step):
+        weight = np.random.randint(56, 66)  # вес урожая в кг (ближе к предыдущему результату)
+        irrigated = np.random.choice([True, False])  # орошалась ли область
+        crop = np.random.choice(['wheat', 'corn', 'soy'])  # какая культура была посажена
+
+        df.loc[i] = [lat, lon, weight, irrigated, crop]
+        i += 1
+
+# Сохраняем DataFrame в файл CSV
+df.to_csv('synthetic_data.csv', index=False)
+
 mysite/app/models.py
 from django.db import models
 
@@ -24,14 +52,27 @@ import folium
 from django.shortcuts import render
 import pandas as pd
 from .models import HarvestData
+import numpy as np
+import numpy as np
 
 def load_data():
     # Чтение данных из CSV-файла
     df = pd.read_csv('synthetic_data.csv')
 
+    # Генерация равномерно распределенных точек в пределах заданной области
+    # Якутск имеет широту примерно от 62 до 63 градусов и долготу от 129 до 130 градусов
+    # Поэтому для создания маленькой области внутри Якутии можно использовать близкие значения широты и долготы
+    min_lat, max_lat = 62.01, 62.02  # Примерная область широты
+    min_lon, max_lon = 129.01, 129.02  # Примерная область долготы
+    step = 0.00018  # Примерно 20 метров между точками
+
+    latitudes = np.arange(min_lat, max_lat, step)
+    longitudes = np.arange(min_lon, max_lon, step)
+
     # Загрузка данных в модель Django
-    for index, row in df.iterrows():
-        data = HarvestData(latitude=row['latitude'], longitude=row['longitude'], weight=row['weight'], irrigated=row['irrigated'], crop=row['crop'])
+    for lat, lon in zip(latitudes, longitudes):
+        row = df.sample()  # Выбираем случайную строку из DataFrame
+        data = HarvestData(latitude=lat, longitude=lon, weight=row['weight'].values[0], irrigated=row['irrigated'].values[0], crop=row['crop'].values[0])
         data.save()
 
 def home(request):
@@ -39,7 +80,7 @@ def home(request):
     load_data()
 
     # Создание карты
-    m = folium.Map(location=[62.035452, 129.675475], zoom_start=13)
+    m = folium.Map(location=[62.015, 129.015], zoom_start=15)  # Центральная точка области
 
     # Добавление данных из модели Django на карту
     for data in HarvestData.objects.all():
@@ -52,7 +93,7 @@ def home(request):
             color = 'green'
 
         # Добавление маркера на карту
-        folium.Marker([data.latitude, data.longitude], popup=f'Weight: {data.weight}', icon=folium.Icon(color=color)).add_to(m)
+        folium.CircleMarker([data.latitude, data.longitude], radius=10, popup=f'Weight: {data.weight}', color=color, fill=True, fill_color=color).add_to(m)
 
     # Генерация HTML-строки с картой
     m = m._repr_html_()
@@ -121,9 +162,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-ws!l)%*+cxj(75!fcdn!rnxlbyw9_y508!wuiyp!&o!^6go(^s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
 
 
 # Application definition

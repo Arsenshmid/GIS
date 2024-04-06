@@ -4,7 +4,7 @@
 touch final.txt
 
 # Список файлов для копирования
-files=("mysite/app/templates/home.html" "mysite/app/сгенерировать тестовые данные.py" "mysite/app/models.py" "mysite/app/views.py" "mysite/app/urls.py" "mysite/mysite/urls.py" "mysite/mysite/settings.py" "mysite/app/apps.py" "mysite/app/admin.py")
+files=("mysite/app/templates/home.html" "mysite/сгенерировать тестовые данные.py" "mysite/app/models.py" "mysite/app/views.py" "mysite/app/urls.py" "mysite/mysite/urls.py" "mysite/mysite/settings.py" "mysite/app/apps.py" "mysite/app/admin.py")
 
 # Цикл по всем файлам
 for file in "${files[@]}"
