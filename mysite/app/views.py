@@ -10,6 +10,26 @@ from io import BytesIO
 import base64
 from shapely.geometry import Polygon
 import geopandas as gpd
+import pandas as pd
+from django.http import HttpResponse
+
+def calculate_ndvi(request):
+    # Загрузка данных из CSV
+    data = pd.read_csv('synthetic_data.csv')
+
+    # Проверка наличия необходимых столбцов
+    if 'NIR' in data.columns and 'Red' in data.columns:
+        # Расчет NDVI
+        data['NDVI'] = (data['NIR'] - data['Red']) / (data['NIR'] + data['Red'])
+
+        # Возвращение данных в виде HTTP-ответа
+        response = HttpResponse(data.to_csv(index=False), content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=ndvi.csv'
+
+        return response
+    else:
+        return HttpResponse('Ошибка: в данных отсутствуют столбцы NIR и Red.')
+    
 
 def chart_view(request):
     # Получение данных из модели Django
@@ -53,7 +73,7 @@ def map_view(request):
     load_data()
 
     # Создание карты
-    m = folium.Map(location=[62.0115, 129.0115], zoom_start=18)  # Центральная точка области
+    m = folium.Map(location=[62.0115, 129.0115], zoom_start=18, tiles='Mapbox Bright')  # Центральная точка области
 
     # Создание списка координат всех точек
     coords = [(data.latitude, data.longitude) for data in HarvestData.objects.all()]
