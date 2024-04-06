@@ -1,0 +1,16 @@
+// график какой-то
+// Загрузка таблицы данных CSV
+var table = ee.FeatureCollection('projects/algokfen/assets/synthetic_data');
+
+// Выбор региона интереса (например, геометрия точки)
+var region = ee.Geometry.Point(129.011, 62.011).buffer(500); // Пример координат
+
+// Создание и вывод графика
+print(ui.Chart.feature.byFeature(table, 'longitude', ['weight']));
+
+// Экспорт таблицы данных в Google Drive
+Export.table.toDrive({
+  collection: table,
+  description: 'my_csv_export',
+  fileFormat: 'CSV'
+});

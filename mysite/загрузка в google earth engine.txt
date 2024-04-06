@@ -1,0 +1,24 @@
+# Импорт библиотеки Earth Engine
+import ee
+
+# Инициализация Earth Engine
+ee.Initialize()
+
+# Создание FeatureCollection из вымышленных данных
+data = [
+    {'latitude': 46.931625, 'longitude': -84.52694, 'weight': 100, 'irrigated': True, 'crop': 'soy'},
+    {'latitude': 42.71689167, 'longitude': -94.25526333, 'weight': 80, 'irrigated': False, 'crop': 'corn'},
+    # Добавьте другие точки урожая...
+]
+
+# Создание FeatureCollection
+points = ee.FeatureCollection([ee.Feature(ee.Geometry.Point(d['longitude'], d['latitude']), d) for d in data])
+
+# Визуализация точек
+Map.addLayer(points, {'color': 'FF0000'}, 'Точки урожая')
+
+# Загрузка данных в GEE
+asset_id = 'users/ваш_пользовательский_путь/имя_файла'
+ee.data.createAsset({'type': 'FeatureCollection'}, asset_id, points.getInfo())
+
+print(f"Данные успешно загружены в GEE: {asset_id}")
