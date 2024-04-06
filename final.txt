@@ -9,6 +9,7 @@ mysite/app/templates/home.html
     {{ map|safe }}
 </body>
 </html>
+
 mysite/сгенерировать тестовые данные.py
 import pandas as pd
 import numpy as np
@@ -16,23 +17,26 @@ import numpy as np
 # Создаем пустой DataFrame
 df = pd.DataFrame(columns=['latitude', 'longitude', 'weight', 'irrigated', 'crop'])
 
-# Задаем границы области внутри Якутска (примерно 2 км)
-min_lat, max_lat = 62, 62.01
-min_lon, max_lon = 129, 129.01
+# Задаем границы области внутри Якутска (примерно 400x400 метров)
+min_lat, max_lat = 62.011, 62.012
+min_lon, max_lon = 129.011, 129.012
 
 # Задаем шаг для генерации точек
-step = 0.00018  # примерно 20 метров
+step = 0.000005  # примерно 20 метров
 
 # Заполняем DataFrame данными
-i = 0
+prev_weight = np.random.randint(0, 1001)  # вес урожая в кг (от 0 до 1000 кг)
 for lat in np.arange(min_lat, max_lat, step):
     for lon in np.arange(min_lon, max_lon, step):
-        weight = np.random.randint(56, 66)  # вес урожая в кг (ближе к предыдущему результату)
+        weight = prev_weight + np.random.randint(-50, 51)  # вес урожая в кг (от 0 до 1000 кг)
+        weight = max(0, weight)  # убедимся, что вес не станет отрицательным
+        weight = min(1000, weight)  # убедимся, что вес не превысит 1000
+        prev_weight = weight
         irrigated = np.random.choice([True, False])  # орошалась ли область
         crop = np.random.choice(['wheat', 'corn', 'soy'])  # какая культура была посажена
 
-        df.loc[i] = [lat, lon, weight, irrigated, crop]
-        i += 1
+        new_row = pd.Series([lat, lon, weight, irrigated, crop], index=df.columns)
+        df = df.append(new_row, ignore_index=True)
 
 # Сохраняем DataFrame в файл CSV
 df.to_csv('synthetic_data.csv', index=False)
@@ -47,47 +51,34 @@ class HarvestData(models.Model):
     irrigated = models.BooleanField()
     crop = models.CharField(max_length=50)
 
+
+
 mysite/app/views.py
 import folium
 from django.shortcuts import render
 import pandas as pd
 from .models import HarvestData
 import numpy as np
-import numpy as np
 
 def load_data():
     # Чтение данных из CSV-файла
     df = pd.read_csv('synthetic_data.csv')
 
-    # Генерация равномерно распределенных точек в пределах заданной области
-    # Якутск имеет широту примерно от 62 до 63 градусов и долготу от 129 до 130 градусов
-    # Поэтому для создания маленькой области внутри Якутии можно использовать близкие значения широты и долготы
-    min_lat, max_lat = 62.01, 62.02  # Примерная область широты
-    min_lon, max_lon = 129.01, 129.02  # Примерная область долготы
-    step = 0.00018  # Примерно 20 метров между точками
-
-    latitudes = np.arange(min_lat, max_lat, step)
-    longitudes = np.arange(min_lon, max_lon, step)
-
     # Загрузка данных в модель Django
-    for lat, lon in zip(latitudes, longitudes):
-        row = df.sample()  # Выбираем случайную строку из DataFrame
-        data = HarvestData(latitude=lat, longitude=lon, weight=row['weight'].values[0], irrigated=row['irrigated'].values[0], crop=row['crop'].values[0])
+    for index, row in df.iterrows():
+        data = HarvestData(latitude=row['latitude'], longitude=row['longitude'], weight=row['weight'], irrigated=row['irrigated'], crop=row['crop'])
         data.save()
 
 def home(request):
-    # Загрузка данных
-    load_data()
-
     # Создание карты
-    m = folium.Map(location=[62.015, 129.015], zoom_start=15)  # Центральная точка области
+    m = folium.Map(location=[62.0115, 129.0115], zoom_start=15)  # Центральная точка области
 
     # Добавление данных из модели Django на карту
     for data in HarvestData.objects.all():
         # Выбор цвета в зависимости от веса урожая
-        if data.weight < 60:
+        if data.weight < 333:
             color = 'red'
-        elif data.weight < 70:
+        elif data.weight < 666:
             color = 'yellow'
         else:
             color = 'green'
@@ -99,6 +90,7 @@ def home(request):
     m = m._repr_html_()
 
     return render(request, 'home.html', {'map': m})
+
 
 mysite/app/urls.py
 from django.urls import path
@@ -259,10 +251,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+"""""
 STATICFILES_DIRS = [
     BASE_DIR / 'templates',  # Путь к каталогу с шаблонами
 ]
-
+"""""
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -271,10 +264,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 mysite/app/apps.py
 from django.apps import AppConfig
 
-
 class AppConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'app'
+
 
 mysite/app/admin.py
 from django.contrib import admin

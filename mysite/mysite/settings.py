@@ -23,10 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-ws!l)%*+cxj(75!fcdn!rnxlbyw9_y508!wuiyp!&o!^6go(^s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -120,11 +119,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-"""""
 STATICFILES_DIRS = [
     BASE_DIR / 'templates',  # Путь к каталогу с шаблонами
 ]
-"""""
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
